@@ -2,6 +2,7 @@ import scipy.io.wavfile
 import scipy.linalg
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import ShortTimeFFT
 
 def autocorr(x):
     L = len(x)
@@ -14,11 +15,12 @@ def autocorr(x):
         r[k] = sum
     return r
 
-fs, data = scipy.io.wavfile.read('apostrophe.wav')
+fs, data = scipy.io.wavfile.read('universal.wav')
 data = data/(2**16)
+t = np.arange(len(data))/fs
 
 # Linear Prediction
-p = 10 # order, must be even
+p = 12 # order, must be even
 N = 100 # length of window
 offset = 50 # how much to offset the next window by
 
@@ -37,18 +39,39 @@ aroots = np.zeros((p,numm),dtype='complex')
 for i in range(numm):
     aroots[:,i] = np.roots(A[:,i])
 
-aroots[np.abs(aroots) < 0.95] = 0
+thresh = 0.9
+aroots[np.abs(aroots) < thresh] = 0
 aroots[np.angle(aroots) < 0] = 0 # Only keep poles in top half of z-plane
 order = np.argsort(np.abs(aroots),axis=0)
 sortedroots = np.flipud(np.take_along_axis(aroots,order,axis=0))
 sortedroots = sortedroots[:p//2]
 print(np.sum(sortedroots > 0))
 
-plt.plot(np.arange(numm)*offset/fs,np.angle(sortedroots[0])/np.pi,'bo')
-plt.plot(np.arange(numm)*offset/fs,np.angle(sortedroots[1])/np.pi,'bo')
-plt.plot(np.arange(numm)*offset/fs,np.angle(sortedroots[2])/np.pi,'bo')
-plt.plot(np.arange(numm)*offset/fs,np.angle(sortedroots[3])/np.pi,'bo')
-plt.plot(np.arange(numm)*offset/fs,np.angle(sortedroots[4])/np.pi,'bo')
-plt.plot(np.arange(len(data))/fs,data)
+# STFT
+nFFT = 128
+w = np.hanning(40) # Wideband = 40, Narrowband = 240
+hop = 5
+SFT = ShortTimeFFT(w,hop=hop,fs=fs,mfft=512,scale_to='magnitude')
+
+Sdata = SFT.stft(data)
+
+fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
+t_lo, t_hi = SFT.extent(len(data))[:2]  # time range of plot
+ax1.set_title(rf"STFT ({SFT.m_num*SFT.T:g}$\,s$ Hanning window, Threshold={thresh})")
+ax1.set(xlabel=f"Time $t$ in seconds ({SFT.p_num(len(data))} slices, " +
+               rf"$\Delta t = {SFT.delta_t:g}\,$s)",
+        ylabel=f"Freq. $f$ in Hz ({SFT.f_pts} bins, " +
+               rf"$\Delta f = {SFT.delta_f:g}\,$Hz)",
+        xlim=(t_lo, t_hi))
+
+im1 = ax1.imshow(20*np.log(abs(Sdata)), origin='lower', aspect='auto',
+                 extent=SFT.extent(len(data)), cmap='viridis')
+fig1.colorbar(im1, label="Log Magnitude $20*log(|S_x(t, f)|)$")
+
+for ind in range(p//2):
+    ax1.plot(np.arange(numm)*offset/fs,np.angle(sortedroots[ind])/np.pi/2*fs,'kx')
+
+
+fig1.tight_layout()
 plt.show()
 print('yay')
