@@ -16,6 +16,7 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.b_record = QtWidgets.QPushButton(parent=self.centralwidget)
+        self.b_record.setEnabled(False)
         self.b_record.setGeometry(QtCore.QRect(340, 150, 120, 32))
         self.b_record.setObjectName("b_record")
         self.l_word = QtWidgets.QLabel(parent=self.centralwidget)
