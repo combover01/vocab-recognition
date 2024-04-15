@@ -70,11 +70,11 @@ for n in range(numWords):
 SFTData[np.isinf(SFTData)] = 0
 
 # Set up matrices for training the CNN
-Y = np.zeros((numWords,numFilesperWord*numWords))
+Y = np.zeros((numFilesperWord*numWords,1))
 for i in range(numFilesperWord):
-     Y[0,i] = 1
-     Y[1,numFilesperWord+i] = 1
-     Y[2,numFilesperWord*2+i] = 1
+     Y[i] = 0
+     Y[numFilesperWord+i] = 1
+     Y[numFilesperWord*2+i] = 2
 
 X = np.zeros((SFTData.shape[2]-1, SFTData.shape[3],numWords*numFilesperWord))
 for i in range(numFilesperWord):
@@ -89,15 +89,14 @@ Xtest = np.dstack([X[:,:,numFilesperWord-1],
                        X[:,:,2*numFilesperWord-1],
                        X[:,:,3*numFilesperWord-1]])
 
-Ytrain = np.concatenate((Y[:,:numFilesperWord-1],
-                        Y[:,numFilesperWord:2*numFilesperWord-1],
-                        Y[:,2*numFilesperWord:3*numFilesperWord-1]),axis=1)
-Ytest = np.concatenate(([Y[:,numFilesperWord-1]],
-                       [Y[:,2*numFilesperWord-1]],
-                       [Y[:,3*numFilesperWord-1]]))
+Ytrain = np.concatenate((Y[:numFilesperWord-1],
+                        Y[numFilesperWord:2*numFilesperWord-1],
+                        Y[2*numFilesperWord:3*numFilesperWord-1]))
+Ytest = np.array((Y[numFilesperWord-1],
+                       Y[2*numFilesperWord-1],
+                       Y[3*numFilesperWord-1]))
 Xtrain = Xtrain.reshape((Xtrain.shape[2],Xtrain.shape[0],Xtrain.shape[1]))
 Xtest = Xtest.reshape((Xtest.shape[2],Xtest.shape[0],Xtest.shape[1]))
-Ytrain = Ytrain.reshape((Ytrain.shape[1],Ytrain.shape[0]))
 
 model = models.Sequential()
 model.add(layers.Conv2D(X.shape[0], (3,3),  activation='relu', input_shape=(X.shape[0], X.shape[1], 1)))
@@ -108,7 +107,7 @@ model.add(layers.Conv2D(X.shape[0]*2, (3,3), activation='relu'))
 model.add(layers.MaxPooling2D((2,2)))
 model.add(layers.Flatten())
 model.add(layers.Dense(X.shape[0]*2, activation='relu'))
-#model.add(layers.Dense(X.shape[0]//2, activation='relu'))
+model.add(layers.Dense(X.shape[0]//2, activation='relu'))
 model.add(layers.Dense(Y.shape[0]))
 model.summary()
 
