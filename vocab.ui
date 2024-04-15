@@ -225,6 +225,44 @@
      <bool>true</bool>
     </property>
    </widget>
+   <widget class="QLabel" name="label2_2">
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>190</y>
+      <width>171</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="whatsThis">
+     <string>word</string>
+    </property>
+    <property name="text">
+     <string>Current loop of word bank:</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="l_loopCounter">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>190</y>
+      <width>71</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="whatsThis">
+     <string>word</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
    <zorder>b_record</zorder>
    <zorder>l_word</zorder>
    <zorder>label2</zorder>
@@ -238,6 +276,8 @@
    <zorder>fp_wordbank</zorder>
    <zorder>fp_1process</zorder>
    <zorder>plainTextEdit</zorder>
+   <zorder>label2_2</zorder>
+   <zorder>l_loopCounter</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
