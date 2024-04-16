@@ -7,7 +7,7 @@ from scipy.signal import decimate
 import matplotlib.pyplot as plt
 from tensorflow.keras import datasets, layers, models
 
-baseFolder = 'C:\\Users\\jayde\\School Stuff\\DSP of Speech Signals\\Project\\vocab-recognition\\DATASET_48k'
+baseFolder = 'C:\\Users\\jayde\\School Stuff\\DSP of Speech Signals\\Project\\vocab-recognition\\DATASET17_6'
 
 # Read in the data
 words = [name for name in os.listdir(baseFolder)
@@ -41,17 +41,17 @@ for n in range(numWords):
 
 # STFT
 nFFT = 64 # Must be even
-lenWindow = 40
+lenWindow = 50
 w = np.hanning(lenWindow) # Wideband = 40, Narrowband = 240
 hop = lenWindow
 SFT = ShortTimeFFT(w,hop=hop,fs=fs,mfft=nFFT,scale_to='magnitude')
-SFTData = np.zeros((numWords,numFilesperWord,nFFT//2+1,int(np.ceil(maxlength/lenWindow))))
+SFTData = np.zeros((numWords,numFilesperWord,nFFT//2+1,int(np.ceil(maxlength/hop))))
 
 for n in range(numWords):
       for m in range(numFilesperWord):
         data = SFT.stft(rawData[n,m,:])
         data = data/np.min(np.abs(data[data!=0]))
-        SFTData[n,m,:,:] = 20*np.log10(np.abs(data))
+        SFTData[n,m,:,:] = 20*np.log10(np.abs(data[:,:int(np.ceil(maxlength/hop))]))
         if False: # Make true to display spectrograms of each word recording
             fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
             t_lo, t_hi = SFT.extent(len(rawData[n,m,:]))[:2]  # time range of plot
@@ -82,20 +82,26 @@ for i in range(numFilesperWord):
      X[:,:,i+numFilesperWord] = SFTData[1,i,:-1,:]
      X[:,:,i+2*numFilesperWord] = SFTData[2,i,:-1,:]
 
-Xtrain = np.concatenate((X[:,:,:numFilesperWord-1],
-                        X[:,:,numFilesperWord:2*numFilesperWord-1],
-                        X[:,:,2*numFilesperWord:3*numFilesperWord-1]),axis=2)
-Xtest = np.dstack([X[:,:,numFilesperWord-1],
-                       X[:,:,2*numFilesperWord-1],
-                       X[:,:,3*numFilesperWord-1]])
+Xtrain = np.zeros((X.shape[0],X.shape[1],numWords*(numFilesperWord-2)))
+Xval = np.zeros((X.shape[0],X.shape[1],numWords))
+Xtest = np.zeros((X.shape[0],X.shape[1],numWords))
 
-Ytrain = np.concatenate((Y[:numFilesperWord-1],
-                        Y[numFilesperWord:2*numFilesperWord-1],
-                        Y[2*numFilesperWord:3*numFilesperWord-1]))
-Ytest = np.array((Y[numFilesperWord-1],
-                       Y[2*numFilesperWord-1],
-                       Y[3*numFilesperWord-1]))
+Ytrain = np.zeros((numWords*(numFilesperWord-2),1))
+Yval = np.zeros((numWords,1))
+Ytest = np.zeros((numWords,1))
+
+for i in range(numWords):
+     Xtrain[:,:,i*(numFilesperWord-2):(i+1)*(numFilesperWord-2)] = X[:,:,i*numFilesperWord:(i+1)*numFilesperWord-2]
+     Xval[:,:,i] = X[:,:,(i+1)*numFilesperWord-2]
+     Xtest[:,:,i] = X[:,:,(i+1)*numFilesperWord-1]
+
+     Ytrain[i*(numFilesperWord-2):(i+1)*(numFilesperWord-2)] = Y[i*numFilesperWord:(i+1)*numFilesperWord-2]
+     Yval[i] = Y[(i+1)*numFilesperWord-2]
+     Ytest[i] = Y[(i+1)*numFilesperWord-1]
+
+# Format the data the way that tensorflow wants it
 Xtrain = Xtrain.reshape((Xtrain.shape[2],Xtrain.shape[0],Xtrain.shape[1]))
+Xval = Xtest.reshape((Xval.shape[2],Xval.shape[0],Xval.shape[1]))
 Xtest = Xtest.reshape((Xtest.shape[2],Xtest.shape[0],Xtest.shape[1]))
 
 model = models.Sequential()
@@ -110,9 +116,9 @@ model.add(layers.Dense(X.shape[0]*2, activation='relu'))
 model.add(layers.Dense(X.shape[0]//2, activation='relu'))
 model.add(layers.Dense(Y.shape[0]))
 model.summary()
-
+ 
 model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-model.fit(Xtrain,Ytrain,epochs=10,validation_data=(Xtest,Ytest))
+model.fit(Xtrain,Ytrain,epochs=40,validation_data=(Xval,Yval))
