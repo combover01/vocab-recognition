@@ -101,8 +101,8 @@ Yval = np.zeros((numWords,1))
 Ytest = np.zeros((numWords,1))
 
 for i in range(numWords):
-     Xtrain[:,:,i*(numFilesperWord-2):(i+1)*(numFilesperWord-2)] = X[:,:,i*numFilesperWord+1:(i+1)*numFilesperWord-1]
-     Xval[:,:,i] = X[:,:,(i)*numFilesperWord]
+     Xtrain[:,:,i*(numFilesperWord-2):(i+1)*(numFilesperWord-2)] = X[:,:,i*numFilesperWord:(i+1)*numFilesperWord-2]
+     Xval[:,:,i] = X[:,:,(i+1)*numFilesperWord-2]
      Xtest[:,:,i] = X[:,:,(i+1)*numFilesperWord-1]
 
      Ytrain[i*(numFilesperWord-2):(i+1)*(numFilesperWord-2)] = Y[i*numFilesperWord:(i+1)*numFilesperWord-2]
@@ -131,11 +131,11 @@ model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-model.fit(Xtrain,Ytrain,epochs=40,validation_data=(Xval,Yval))
+model.fit(Xtrain,Ytrain,epochs=10,validation_data=(Xval,Yval))
 testAccuracySpec = model.evaluate(Xtest, Ytest)[1]
 print(f'Test Accuracy for Spectrogram Model: {testAccuracySpec}')
 
-'''
+
 # Linear Prediction
 p = 12 # order, must be even
 N = 100 # length of window
@@ -208,4 +208,3 @@ modelLPC.compile(optimizer='adam',
 modelLPC.fit(Xtrainlpc,Ytrainlpc,epochs=100,validation_data=(Xvallpc,Yvallpc))
 testAccuracyLPC = modelLPC.evaluate(Xtestlpc, Ytestlpc)[1]
 print(f'Test Accuracy for LPC Model: {testAccuracyLPC}')
-'''
