@@ -62,8 +62,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             with open(wordbankFP) as file:
                 self.wordBankContent = [line.strip() for line in file.readlines()] 
 
-            # header = content[:1]
-            # rows = content[1:]
             print(self.wordBankContent)
 
             print(self.wordBankContent[1])
@@ -87,8 +85,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             with open(wordbank2FP) as file:
                 self.wordBank2Content = [line.strip() for line in file.readlines()] 
 
-            # header = content[:1]
-            # rows = content[1:]
             print(self.wordBank2Content)
 
             print(self.wordBank2Content[1])
@@ -293,9 +289,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.onStopBtn2Clicked()
             self.b_record_2.setText("Record")
             self.bool_recording = False
-
-
-
 
     def onProcessBtnClicked(self):
         print("clicked the process button! do training of the model here")
