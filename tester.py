@@ -8,18 +8,16 @@ import os
 from datetime import datetime
 from time import gmtime, strftime
 import random
-import sounddevice as sd
 import soundfile as sf
 import numpy  # Make sure NumPy is loaded before it is used in the callback
 assert numpy  # avoid "imported but unused" message (W0611)
 import threading
-from scipy.io import wavfile
 import numpy as np
 
 # /Users/mir/Documents/GITHUB/vocab-recognition/vocabList.csv
 # /Users/mir/Documents/GITHUB/vocab-recognition/vocabList2.csv
 # baseFolder = "/Users/mir/Documents/GITHUB/vocab-recognition/DATASET_48k"
-
+# to rerun qt designer file generation, run this in terminal: pyuic6 -o ui_testtraining.py test_training.ui
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):
@@ -35,9 +33,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.b_predict.clicked.connect(self.onPredictBtnClicked)
         self.b_generatenew.clicked.connect(self.onGenerateNewClicked)
 
-
-        self.b_predict.setEnabled(False)
-
         self.wordBankFilled = False
         self.wordBank2Filled = False
         self.wordBankIndex = 0
@@ -47,6 +42,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.curWord = 'default'
         self.wordBankLen = 1
         self.filename = ""
+        self.filename2 = ""
+        self.trainingFolderFilePath = ""
         self.loopCounter = -1
 
         # make a new folder with time and date for all the files we will record with this instance of the GUI!
@@ -55,20 +52,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if not os.path.exists(self.curfolderpath):
             os.makedirs(self.curfolderpath)
 
-
-    def onProcessBtnClicked(self):
-        print("clicked the process button! do training of the model here")
-        self.b_process.setText("training model, go to recognition tab next")
-        # self.b_process.setEnabled(False)
-        # self.tabWidget.setCurrentIndex(1)
-
-
-
     def onWordBankBtnClicked(self):
         print("clicked the word bank button!")
         wordbankFP = str(self.fp_wordbank.text())
         if len(wordbankFP) < 1:
-            wordbankFP = "/Users/mir/Documents/GITHUB/vocab-recognition/vocabList2.csv"
+            wordbankFP = "/Users/mir/Documents/GITHUB/vocab-recognition/vocabList3.csv"
         print(wordbankFP)
         try:
             with open(wordbankFP) as file:
@@ -85,6 +73,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.plainTextEdit.insertPlainText(str("\n"))
                 self.wordBankFilled = True
                 self.handleWordBank(0)
+            self.b_generatenew.setEnabled(True)
         except:
             print("file doesnt exist or other error in wordbankbtnclicked")
 
@@ -92,7 +81,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         print("clicked the word bank 2 button!")
         wordbank2FP = str(self.fp_wordbank_2.text())
         if len(wordbank2FP) < 1:
-            wordbank2FP = "/Users/mir/Documents/GITHUB/vocab-recognition/vocabList2.csv"
+            wordbank2FP = "/Users/mir/Documents/GITHUB/vocab-recognition/vocabList3.csv"
         print(wordbank2FP)
         try:
             with open(wordbank2FP) as file:
@@ -114,11 +103,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def onUploadRecordingsBtnClicked(self):
         print("clicked upload recordings button!")
+        self.trainingFolderFilePath = self.fp_prerecord.text()
+        self.b_process.setEnabled(True)
 
     def handleWordBank(self,whichWordBank):
         print("word bank is being handled!")
         if whichWordBank == 1:
             self.loopCounter = self.loopCounter + 1
+            if self.loopCounter > 0:
+                self.b_process.setEnabled(True)
+            else:
+                self.b_process.setEnabled(False)
+
             self.b_record_2.setEnabled(True)
         if whichWordBank == 0:
             self.b_record.setEnabled(True)
@@ -140,8 +136,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.curWord2Index = 0
             self.curWord2 = self.wordBank2Content[self.randomWord2Indeces[self.curWord2Index]]
             self.l_word_2.setText(self.curWord2)
-            self.l_loopCounter.setText(str(self.loopCounter) + ", " + str(self.curWordIndex) + "/" + str(self.wordBankLen))
-        
+            self.l_loopCounter.setText(str(self.loopCounter) + ", " + str(self.curWord2Index) + "/" + str(self.wordBank2Len))
         
     def setNewWord(self):
         self.curWordIndex = self.curWordIndex + 1
@@ -156,12 +151,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.curWord2Index > (self.wordBank2Len - 1):
             self.handleWordBank(1)
         else:
-            self.curWord2 = self.wordBankContent[self.randomWordIndeces[self.curWord2Index]]
+            self.curWord2 = self.wordBank2Content[self.randomWord2Indeces[self.curWord2Index]]
             self.l_word_2.setText(self.curWord2)
             self.l_loopCounter.setText(str(self.loopCounter) + ", " + str(self.curWord2Index) + "/" + str(self.wordBank2Len))
 
     def onGenerateNewClicked(self):
-        self.setNewWord2()
+        self.setNewWord()
 
     def start_recording(self):
         fs = 48000
@@ -173,7 +168,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 filename = filename + "/" + "recognition" + "/" + self.curWord + "/"
                 if not os.path.exists(filename):
                     os.makedirs(filename)
-                filename = filename + "/" + self.curWord + "_"
+                filename = filename + self.curWord + "_"
                 # dt = strftime('%d-%b-%H%M%S')
                 filename = filename + str(self.loopCounter)
                 filename = filename + ".wav"
@@ -212,11 +207,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 filename = filename + "/" + "training" + "/" + self.curWord2 + "/"
                 if not os.path.exists(filename):
                     os.makedirs(filename)
-                filename = filename + "/" + self.curWord2 + "_"
+                filename = filename + self.curWord2 + "_"
                 # dt = strftime('%d-%b-%H%M%S')
                 filename = filename + str(self.loopCounter)
                 filename = filename + ".wav"
-                self.filename = filename
+                self.filename2 = filename
             q = queue.Queue()
 
             def callback(indata, frames, time, status):
@@ -241,8 +236,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             print("error:")
             print(e)
 
-
-
     def onRecordBtnClicked(self):
         print("clicked record/stop button!")
         # time to record!
@@ -261,6 +254,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             cut_files(self.filename)
         except:
             print("error in cut files")
+
+        self.b_predict.setEnabled(True)
         # dont set new word, now you have to click predict and it will predict
         # self.setNewWord()
     
@@ -268,9 +263,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         print("clicked stop button!")
         self.stop_recording = True
         try:
-            cut_files(self.filename)
+            cut_files(self.filename2)
         except:
             print("error in cut files")
+
+        if self.b_process.isEnabled:
+            self.b_process.setEnabled(False)
+
         self.setNewWord2()
 
     def onRecStopBtnClicked(self):
@@ -295,17 +294,42 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.b_record_2.setText("Record")
             self.bool_recording = False
 
+
+
+
+    def onProcessBtnClicked(self):
+        print("clicked the process button! do training of the model here")
+        if len(self.trainingFolderFilePath) < 3:
+            self.trainingFolderFilePath = self.filename2.rsplit('/',2)[0]
+
+        self.b_process.setText("training model, go to recognition tab next")
+
+        print(self.trainingFolderFilePath)
+
+        self.model,self.longestLength,numFiles = CNNtrainingFunction(self.trainingFolderFilePath)
+
+
+
     def onPredictBtnClicked(self):
         self.b_predict.setEnabled(True)
         print("predict button clicked. run the machine learning code now!")
+        # find file path to the newly recorded file, the shortened version of it
+
+        filename = self.filename.rsplit('/',1)[1]
+        filepath = self.filename.rsplit('/',1)[0]
+        newfilepath = filepath + "/shortened"
+        output_file_path = newfilepath + "/" + filename 
 
 
-
-        # self.l_pred
-
+        wordPrediction_spectrogram, predictValue_spectrogram, wordPrediction_linear, predictValue_linear = CNNtesterFunction(output_file_path, self.model, self.longestLength)
 
 
-    
+        self.l_spectrogram_word.setText(wordPrediction_spectrogram)
+        self.l_spectrogram_accuracy.setText(predictValue_spectrogram + "%% accurate")
+        self.l_linear_word.setText(wordPrediction_linear)
+        self.l_linear_accuracy.setText(predictValue_linear + "%% accurate")
+
+
 
 def cut_files(filepath):
     window_size = 1500
@@ -331,6 +355,7 @@ def cut_files(filepath):
     output_file_path = newfilepath + "/" + filename 
     # wavfile.write(output_file_path, sample_rate, audio_segment)
     sf.write(output_file_path,audio_segment,sample_rate)
+
 
 def short_time_energy(signal, window_size, hop_size):
 
