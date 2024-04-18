@@ -41,7 +41,7 @@ def show_performance_curve(training_result, metric, metric_label):
      plt.legend(loc='lower right')
      plt.show()
 
-baseFolder = 'C:\\Users\\jayde\\School Stuff\\DSP of Speech Signals\\Project\\vocab-recognition\\DATASET17_6'
+baseFolder = 'C:\\Users\\jayde\\School Stuff\\DSP of Speech Signals\\Project\\vocab-recognition\\training'
 
 def readData(baseFolder):
      # Read in the data
@@ -137,54 +137,29 @@ def trainModelSpectrogram(baseFolder):
      for i in range(numWords):
           Xtrain[:,:,i*(numFilesperWord-1):(i+1)*(numFilesperWord-1)] = X[:,:,i*numFilesperWord:(i+1)*numFilesperWord-1]
           Xval[:,:,i] = X[:,:,(i+1)*numFilesperWord-1]
-          #Xtest[:,:,i] = X[:,:,(i+1)*numFilesperWord-1]
 
           Ytrain[i*(numFilesperWord-1):(i+1)*(numFilesperWord-1)] = Y[i*numFilesperWord:(i+1)*numFilesperWord-1]
           Yval[i] = Y[(i+1)*numFilesperWord-1]
-          #Ytest[i] = Y[(i+1)*numFilesperWord-1]
 
      Ytrain = to_categorical(Ytrain,numWords)
      Yval = to_categorical(Yval,numWords)
-     #Ytest = to_categorical(Ytest,numWords)
 
      # Format the data the way that tensorflow wants it
      Xtrain = Xtrain.reshape((Xtrain.shape[2],Xtrain.shape[0],Xtrain.shape[1]))
      Xval = Xtest.reshape((Xval.shape[2],Xval.shape[0],Xval.shape[1]))
-     #Xtest = Xtest.reshape((Xtest.shape[2],Xtest.shape[0],Xtest.shape[1]))
-     '''
-     model = models.Sequential()
-     model.add(layers.Conv2D(X.shape[0], (3,3),  activation='relu', input_shape=(X.shape[0], X.shape[1], 1)))
-     model.add(layers.MaxPooling2D((2,2)))
-     model.add(layers.Conv2D(X.shape[0]*2, (3,3), activation='relu'))
-     model.add(layers.MaxPooling2D((2,2)))
-     model.add(layers.Conv2D(X.shape[0]*2, (3,3), activation='relu'))
-     model.add(layers.MaxPooling2D((2,2)))
-     model.add(layers.Flatten())
-     model.add(layers.Dense(X.shape[0], activation='relu'))
-     model.add(layers.Dense(numWords, activation='softmax'))
-     model.summary()
-     '''
 
      model = models.Sequential()
      model.add(layers.Input((X.shape[0], X.shape[1], 1)))
      model.add(layers.BatchNormalization())
      model.add(layers.GaussianNoise(0.1))
      model.add(layers.Conv2D(16, (7,7),activation='relu'))
-     # model.add(layers.BatchNormalization())
-     model.add(layers.Dropout(0.25))
      model.add(layers.MaxPooling2D((2,2)))
      model.add(layers.Conv2D(32,(5,5), activation='relu'))
-     # model.add(layers.BatchNormalization())
-     model.add(layers.Dropout(0.25))
      model.add(layers.MaxPooling2D((2,2)))
      model.add(layers.Conv2D(64,(5,5), activation='relu'))
-     # model.add(layers.BatchNormalization())
-     model.add(layers.Dropout(0.25))
      model.add(layers.MaxPooling2D((2,2)))
      model.add(layers.Flatten())
      model.add(layers.Dense(nFFT//2, activation='relu'))
-     # model.add(layers.BatchNormalization())
-     model.add(layers.Dropout(0.5))
      model.add(layers.Dense(numWords, activation='softmax'))
      model.summary()
 
@@ -196,7 +171,7 @@ def trainModelSpectrogram(baseFolder):
                metrics=METRICS)
 
 
-     trainingHistory = model.fit(Xtrain,Ytrain,epochs=40,validation_data=(Xval,Yval))
+     trainingHistory = model.fit(Xtrain,Ytrain,epochs=10,validation_data=(Xval,Yval))
      # testAccuracySpec = model.evaluate(Xtest, Ytest)[1]
      #show_performance_curve(trainingHistory,'accuracy','accuracy')
      return model, maxlength
@@ -241,11 +216,11 @@ def trainModelLPC(baseFolder):
                Xlpc[n*numFilesperWord+m,p//2:,:] = np.concatenate((np.angle(sortedroots),np.zeros((p//2,maxm-numm))),axis=1)
 
      Xtrainlpc = np.zeros((numWords*(numFilesperWord-1),Xlpc.shape[1],Xlpc.shape[2]))
-     Xvallpc = np.zeros((numWords,Xlpc.shape[1],Xlpc.shape[2]))
+     Xvallpc = np.zeros((numWords*2,Xlpc.shape[1],Xlpc.shape[2]))
      # Xtestlpc = np.zeros((numWords,Xlpc.shape[1],Xlpc.shape[2]))
 
      Ytrainlpc = np.zeros((numWords*(numFilesperWord-1)))
-     Yvallpc = np.zeros((numWords))
+     Yvallpc = np.zeros((numWords*2))
      # Ytestlpc = np.zeros((numWords,1))
 
      Y = np.zeros((numFilesperWord*numWords))
@@ -254,12 +229,12 @@ def trainModelLPC(baseFolder):
                Y[i*numFilesperWord + index] = i
 
      for i in range(numWords):
-          Xtrainlpc[i*(numFilesperWord-1):(i+1)*(numFilesperWord-1),:,:] = Xlpc[i*numFilesperWord:(i+1)*numFilesperWord-1,:,:]
-          Xvallpc[i,:,:] = Xlpc[(i+1)*numFilesperWord-1,:,:]
+          Xtrainlpc[i*(numFilesperWord-2):(i+1)*(numFilesperWord-2),:,:] = Xlpc[i*numFilesperWord:(i+1)*numFilesperWord-2,:,:]
+          Xvallpc[2*i:2*(i+1),:,:] = Xlpc[(i+1)*numFilesperWord-2:(i+1)*numFilesperWord,:,:]
           # Xtestlpc[i,:,:] = Xlpc[(i+1)*numFilesperWord-1,:,:]
 
-          Ytrainlpc[i*(numFilesperWord-1):(i+1)*(numFilesperWord-1)] = Y[i*numFilesperWord:(i+1)*numFilesperWord-1]
-          Yvallpc[i] = Y[(i+1)*numFilesperWord-1]
+          Ytrainlpc[i*(numFilesperWord-2):(i+1)*(numFilesperWord-2)] = Y[i*numFilesperWord:(i+1)*numFilesperWord-2]
+          Yvallpc[2*i:2*(i+1)] = Y[(i+1)*numFilesperWord-2:(i+1)*numFilesperWord]
           # Ytestlpc[i] = Y[(i+1)*numFilesperWord-1]
 
      Ytrainlpc = to_categorical(Ytrainlpc,numWords)
@@ -290,9 +265,9 @@ def trainModelLPC(baseFolder):
                loss='categorical_crossentropy',
                metrics=METRICSLPC)
 
-     modelLPC.fit(Xtrainlpc,Ytrainlpc,epochs=40,validation_data=(Xvallpc,Yvallpc))
+     modelLPC.fit(Xtrainlpc,Ytrainlpc,epochs=20,validation_data=(Xvallpc,Yvallpc))
      # testAccuracyLPC = modelLPC.evaluate(Xtestlpc, Ytestlpc)[1]
-     return modelLPC, maxlength, numFilesperWord
+     return modelLPC, maxlength
 
 def predictWithSpecModel(model,maxlength,filepath):
      data, fs = sf.read(filepath)
@@ -301,6 +276,9 @@ def predictWithSpecModel(model,maxlength,filepath):
      q = 6
      fs = fs/q
      dsData = decimate(rawData,q)
+
+     if len(dsData) < maxlength:
+          dsData = np.concatenate((dsData,np.zeros(maxlength-len(dsData))))
 
      # STFT
      nFFT = 256 # Must be even
@@ -368,8 +346,7 @@ def predictWithLPCModel(model,maxlength,filepath):
      return labelPrediction, certaintyVal
 
 # modelS, maxlengthS = trainModelSpectrogram(baseFolder)
-modelL, maxlengthL, numFilesperWord = trainModelLPC(baseFolder)
+modelL, maxlengthL = trainModelLPC(baseFolder)
 
-label, val = predictWithLPCModel(modelL,maxlengthL,
-                              'C:\\Users\\jayde\\School Stuff\\DSP of Speech Signals\\Project\\vocab-recognition\\DATASET17_6\\Thermodynamic\\Thermodynamic_4.wav')
+label, val = predictWithLPCModel(modelL,maxlengthL,baseFolder + '\\publications\\shortened\\publications_13.wav')
 print(f'Label={label}, Val={val}')
