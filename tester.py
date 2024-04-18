@@ -13,10 +13,12 @@ import numpy  # Make sure NumPy is loaded before it is used in the callback
 assert numpy  # avoid "imported but unused" message (W0611)
 import threading
 import numpy as np
+import CNNmodel
 
 # /Users/mir/Documents/GITHUB/vocab-recognition/vocabList.csv
 # /Users/mir/Documents/GITHUB/vocab-recognition/vocabList2.csv
 # baseFolder = "/Users/mir/Documents/GITHUB/vocab-recognition/DATASET_48k"
+# /Users/mir/Documents/GITHUB/vocab-recognition/18-Apr-082330/training
 # to rerun qt designer file generation, run this in terminal: pyuic6 -o ui_testtraining.py test_training.ui
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -299,9 +301,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         print(self.trainingFolderFilePath)
 
-        self.model,self.longestLength,numFiles = CNNtrainingFunction(self.trainingFolderFilePath)
 
-
+        self.specModel,self.longestSpecLength = CNNmodel.trainModelSpectrogram(self.trainingFolderFilePath)
+        self.lpcModel,self.longestLPCLength = CNNmodel.trainModelLPC(self.trainingFolderFilePath)
 
 
     def onPredictBtnClicked(self):
@@ -315,7 +317,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         output_file_path = newfilepath + "/" + filename 
 
 
-        wordPrediction_spectrogram, predictValue_spectrogram, wordPrediction_linear, predictValue_linear = CNNtesterFunction(output_file_path, self.model, self.longestLength)
+        # wordPrediction_spectrogram, predictValue_spectrogram, wordPrediction_linear, predictValue_linear = CNNtesterFunction(output_file_path, self.model, self.longestLength)
+        wordPrediction_spectrogram, predictValue_spectrogram = CNNmodel.predictWithSpecModel(self.specModel,self.longestSpecLength,filepath)
+        wordPrediction_linear, predictValue_linear = CNNmodel.predictWithSpecModel(self.lpcModel,self.longestLPCLength,filepath)
+
 
 
         self.l_spectrogram_word.setText(wordPrediction_spectrogram)
