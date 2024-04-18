@@ -303,6 +303,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
+
     def onPredictBtnClicked(self):
         self.b_predict.setEnabled(True)
         print("predict button clicked. run the machine learning code now!")
@@ -321,8 +322,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.l_spectrogram_accuracy.setText(predictValue_spectrogram + "%% accurate")
         self.l_linear_word.setText(wordPrediction_linear)
         self.l_linear_accuracy.setText(predictValue_linear + "%% accurate")
-
-
 
 def cut_files(filepath):
     window_size = 1500
