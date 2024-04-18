@@ -41,8 +41,6 @@ def show_performance_curve(training_result, metric, metric_label):
      plt.legend(loc='lower right')
      plt.show()
 
-baseFolder = 'C:\\Users\\jayde\\School Stuff\\DSP of Speech Signals\\Project\\vocab-recognition\\training'
-
 def readData(baseFolder):
      # Read in the data
      words = [name for name in os.listdir(baseFolder)
@@ -216,11 +214,11 @@ def trainModelLPC(baseFolder):
                Xlpc[n*numFilesperWord+m,p//2:,:] = np.concatenate((np.angle(sortedroots),np.zeros((p//2,maxm-numm))),axis=1)
 
      Xtrainlpc = np.zeros((numWords*(numFilesperWord-1),Xlpc.shape[1],Xlpc.shape[2]))
-     Xvallpc = np.zeros((numWords*2,Xlpc.shape[1],Xlpc.shape[2]))
+     Xvallpc = np.zeros((numWords,Xlpc.shape[1],Xlpc.shape[2]))
      # Xtestlpc = np.zeros((numWords,Xlpc.shape[1],Xlpc.shape[2]))
 
      Ytrainlpc = np.zeros((numWords*(numFilesperWord-1)))
-     Yvallpc = np.zeros((numWords*2))
+     Yvallpc = np.zeros((numWords))
      # Ytestlpc = np.zeros((numWords,1))
 
      Y = np.zeros((numFilesperWord*numWords))
@@ -229,17 +227,14 @@ def trainModelLPC(baseFolder):
                Y[i*numFilesperWord + index] = i
 
      for i in range(numWords):
-          Xtrainlpc[i*(numFilesperWord-2):(i+1)*(numFilesperWord-2),:,:] = Xlpc[i*numFilesperWord:(i+1)*numFilesperWord-2,:,:]
-          Xvallpc[2*i:2*(i+1),:,:] = Xlpc[(i+1)*numFilesperWord-2:(i+1)*numFilesperWord,:,:]
-          # Xtestlpc[i,:,:] = Xlpc[(i+1)*numFilesperWord-1,:,:]
+          Xtrainlpc[i*(numFilesperWord-1):(i+1)*(numFilesperWord-1),:,:] = Xlpc[i*numFilesperWord:(i+1)*numFilesperWord-1,:,:]
+          Xvallpc[i,:,:] = Xlpc[(i+1)*numFilesperWord-1,:,:]
 
-          Ytrainlpc[i*(numFilesperWord-2):(i+1)*(numFilesperWord-2)] = Y[i*numFilesperWord:(i+1)*numFilesperWord-2]
-          Yvallpc[2*i:2*(i+1)] = Y[(i+1)*numFilesperWord-2:(i+1)*numFilesperWord]
-          # Ytestlpc[i] = Y[(i+1)*numFilesperWord-1]
+          Ytrainlpc[i*(numFilesperWord-1):(i+1)*(numFilesperWord-1)] = Y[i*numFilesperWord:(i+1)*numFilesperWord-1]
+          Yvallpc[i] = Y[(i+1)*numFilesperWord-1]
 
      Ytrainlpc = to_categorical(Ytrainlpc,numWords)
      Yvallpc = to_categorical(Yvallpc,numWords)
-     # Ytestlpc = to_categorical(Ytestlpc,numWords)
 
      modelLPC = models.Sequential()
      modelLPC.add(layers.Input((Xlpc.shape[1], Xlpc.shape[2], 1)))
@@ -251,10 +246,8 @@ def trainModelLPC(baseFolder):
      modelLPC.add(layers.Conv2D(8, (3,3), activation='relu'))
      modelLPC.add(layers.Dropout(0.25))
      modelLPC.add(layers.Conv2D(16, (3,3), activation='relu'))
-     modelLPC.add(layers.Dropout(0.25))
      modelLPC.add(layers.Flatten())
      modelLPC.add(layers.Dense(32, activation='relu'))
-     modelLPC.add(layers.Dropout(0.25))
      modelLPC.add(layers.Dense(numWords, activation='softmax'))
      modelLPC.summary()
 
@@ -265,7 +258,7 @@ def trainModelLPC(baseFolder):
                loss='categorical_crossentropy',
                metrics=METRICSLPC)
 
-     modelLPC.fit(Xtrainlpc,Ytrainlpc,epochs=5,validation_data=(Xvallpc,Yvallpc))
+     modelLPC.fit(Xtrainlpc,Ytrainlpc,epochs=30,validation_data=(Xvallpc,Yvallpc))
      # testAccuracyLPC = modelLPC.evaluate(Xtestlpc, Ytestlpc)[1]
      return modelLPC, maxlength
 
@@ -346,9 +339,25 @@ def predictWithLPCModel(model,maxlength,filepath):
      labelPrediction = np.argmax(prediction, axis=1)[0]
      certaintyVal = np.max(prediction, axis=1)[0]
      return labelPrediction, certaintyVal
+'''
+baseFolder = 'C:\\Users\\jayde\\School Stuff\\DSP of Speech Signals\\Project\\vocab-recognition\\MyTraining'
 
-# modelS, maxlengthS = trainModelSpectrogram(baseFolder)
-# modelL, maxlengthL = trainModelLPC(baseFolder)
+#modelS, maxlengthS = trainModelSpectrogram(baseFolder)
+modelL, maxlengthL = trainModelLPC(baseFolder)
 
-# label, val = predictWithLPCModel(modelL,maxlengthL,baseFolder + '\\publications\\shortened\\publications_13.wav')
-# print(f'Label={label}, Val={val}')
+testFolder = 'C:\\Users\\jayde\\School Stuff\\DSP of Speech Signals\\Project\\vocab-recognition\\MyTest'
+testExtensions = ['\\Ephemeral_9.wav', '\\Exquisite_9.wav', '\\publications_9.wav', '\\Thermodynamic_9.wav']
+
+sum = 0
+for ind, test in enumerate(testExtensions):
+     labelL, valL = predictWithLPCModel(modelL,maxlengthL,testFolder + test)
+     print(f'LPC {ind}: Label={labelL}, Val={valL}')
+     #labelS, valS = predictWithSpecModel(modelS,maxlengthS,testFolder + test)
+     #print(f'Spec {ind}: Label={labelS}, Val={valS}')
+     if labelL == ind:
+          sum = sum+1
+     #if labelS == ind:
+     #     sum=sum+1
+
+print(f'Final Result: {sum}/4')
+'''

@@ -15,7 +15,7 @@ import threading
 import numpy as np
 import CNNmodel
 
-# C:\Users\jayde\School Stuff\DSP of Speech Signals\Project\vocab-recognition\training
+# C:\Users\jayde\School Stuff\DSP of Speech Signals\Project\vocab-recognition\MyTraining
 # C:\Users\jayde\School Stuff\DSP of Speech Signals\Project\vocab-recognition\vocabList3.csv
 
 # /Users/mir/Documents/GITHUB/vocab-recognition/vocabList.csv
