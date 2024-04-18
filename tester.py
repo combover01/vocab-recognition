@@ -15,6 +15,9 @@ import threading
 import numpy as np
 import CNNmodel
 
+# C:\Users\jayde\School Stuff\DSP of Speech Signals\Project\vocab-recognition\training
+# C:\Users\jayde\School Stuff\DSP of Speech Signals\Project\vocab-recognition\vocabList3.csv
+
 # /Users/mir/Documents/GITHUB/vocab-recognition/vocabList.csv
 # /Users/mir/Documents/GITHUB/vocab-recognition/vocabList2.csv
 # baseFolder = "/Users/mir/Documents/GITHUB/vocab-recognition/DATASET_48k"
@@ -50,7 +53,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # make a new folder with time and date for all the files we will record with this instance of the GUI!
         dt = strftime('%d-%b-%H%M%S')
-        self.curfolderpath = os.getcwd() + "/" + dt
+        self.curfolderpath = os.getcwd() + "\\" + dt
         if not os.path.exists(self.curfolderpath):
             os.makedirs(self.curfolderpath)
 
@@ -134,7 +137,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.curWord2Index = 0
             self.curWord2 = self.wordBank2Content[self.randomWord2Indeces[self.curWord2Index]]
             self.l_word_2.setText(self.curWord2)
-            self.l_loopCounter.setText(str(self.loopCounter) + ", " + str(self.curWord2Index) + "/" + str(self.wordBank2Len))
+            self.l_loopCounter.setText(str(self.loopCounter) + ", " + str(self.curWord2Index) + "\\" + str(self.wordBank2Len))
         
     def setNewWord(self):
         self.curWordIndex = self.curWordIndex + 1
@@ -151,7 +154,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             self.curWord2 = self.wordBank2Content[self.randomWord2Indeces[self.curWord2Index]]
             self.l_word_2.setText(self.curWord2)
-            self.l_loopCounter.setText(str(self.loopCounter) + ", " + str(self.curWord2Index) + "/" + str(self.wordBank2Len))
+            self.l_loopCounter.setText(str(self.loopCounter) + ", " + str(self.curWord2Index) + "\\" + str(self.wordBank2Len))
 
     def onGenerateNewClicked(self):
         self.setNewWord()
@@ -163,7 +166,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if len(filename) < 3:
                 # filename = os.getcwd()
                 filename = self.curfolderpath
-                filename = filename + "/" + "recognition" + "/" + self.curWord + "/"
+                filename = filename + "\\" + "recognition" + "\\" + self.curWord + "\\"
                 if not os.path.exists(filename):
                     os.makedirs(filename)
                 filename = filename + self.curWord + "_"
@@ -202,7 +205,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if len(filename) < 3:
                 # filename = os.getcwd()
                 filename = self.curfolderpath
-                filename = filename + "/" + "training" + "/" + self.curWord2 + "/"
+                filename = filename + "\\" + "training" + "\\" + self.curWord2 + "\\"
                 if not os.path.exists(filename):
                     os.makedirs(filename)
                 filename = filename + self.curWord2 + "_"
@@ -295,7 +298,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def onProcessBtnClicked(self):
         print("clicked the process button! do training of the model here")
         if len(self.trainingFolderFilePath) < 3:
-            self.trainingFolderFilePath = self.filename2.rsplit('/',2)[0]
+            self.trainingFolderFilePath = self.filename2.rsplit('\\',2)[0]
 
         self.b_process.setText("training model, go to recognition tab next")
 
@@ -311,22 +314,22 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         print("predict button clicked. run the machine learning code now!")
         # find file path to the newly recorded file, the shortened version of it
 
-        filename = self.filename.rsplit('/',1)[1]
-        filepath = self.filename.rsplit('/',1)[0]
-        newfilepath = filepath + "/shortened"
-        output_file_path = newfilepath + "/" + filename 
+        filename = self.filename.rsplit('\\',1)[1]
+        filepath = self.filename.rsplit('\\',1)[0]
+        newfilepath = filepath + "\\shortened"
+        output_file_path = newfilepath + "\\" + filename 
 
 
         # wordPrediction_spectrogram, predictValue_spectrogram, wordPrediction_linear, predictValue_linear = CNNtesterFunction(output_file_path, self.model, self.longestLength)
-        wordPrediction_spectrogram, predictValue_spectrogram = CNNmodel.predictWithSpecModel(self.specModel,self.longestSpecLength,filepath)
-        wordPrediction_linear, predictValue_linear = CNNmodel.predictWithSpecModel(self.lpcModel,self.longestLPCLength,filepath)
+        wordPrediction_spectrogram, predictValue_spectrogram = CNNmodel.predictWithSpecModel(self.specModel,self.longestSpecLength,output_file_path)
+        wordPrediction_linear, predictValue_linear = CNNmodel.predictWithLPCModel(self.lpcModel,self.longestLPCLength,output_file_path)
 
 
 
-        self.l_spectrogram_word.setText(wordPrediction_spectrogram)
-        self.l_spectrogram_accuracy.setText(predictValue_spectrogram + "%% accurate")
-        self.l_linear_word.setText(wordPrediction_linear)
-        self.l_linear_accuracy.setText(predictValue_linear + "%% accurate")
+        self.l_spectrogram_word.setText(self.wordBankContent[wordPrediction_spectrogram])
+        self.l_spectrogram_accuracy.setText(str(predictValue_spectrogram*100) + "% confident")
+        self.l_linear_word.setText(self.wordBankContent[wordPrediction_linear])
+        self.l_linear_accuracy.setText(str(predictValue_linear*100) + "% confident")
 
 def cut_files(filepath):
     window_size = 1500
@@ -344,12 +347,12 @@ def cut_files(filepath):
 
     audio_segment = audio[onset_sample:offset_sample]
     # output_file_path = 'new_wav_file.wav'
-    filename = filepath.rsplit('/',1)[1]
-    filepath = filepath.rsplit('/',1)[0]
-    newfilepath = filepath + "/shortened"
+    filename = filepath.rsplit('\\',1)[1]
+    filepath = filepath.rsplit('\\',1)[0]
+    newfilepath = filepath + "\\shortened"
     if not os.path.exists(newfilepath):
         os.makedirs(newfilepath)
-    output_file_path = newfilepath + "/" + filename 
+    output_file_path = newfilepath + "\\" + filename 
     # wavfile.write(output_file_path, sample_rate, audio_segment)
     sf.write(output_file_path,audio_segment,sample_rate)
 

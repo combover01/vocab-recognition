@@ -171,7 +171,7 @@ def trainModelSpectrogram(baseFolder):
                metrics=METRICS)
 
 
-     trainingHistory = model.fit(Xtrain,Ytrain,epochs=10,validation_data=(Xval,Yval))
+     trainingHistory = model.fit(Xtrain,Ytrain,epochs=5,validation_data=(Xval,Yval))
      # testAccuracySpec = model.evaluate(Xtest, Ytest)[1]
      #show_performance_curve(trainingHistory,'accuracy','accuracy')
      return model, maxlength
@@ -265,7 +265,7 @@ def trainModelLPC(baseFolder):
                loss='categorical_crossentropy',
                metrics=METRICSLPC)
 
-     modelLPC.fit(Xtrainlpc,Ytrainlpc,epochs=20,validation_data=(Xvallpc,Yvallpc))
+     modelLPC.fit(Xtrainlpc,Ytrainlpc,epochs=5,validation_data=(Xvallpc,Yvallpc))
      # testAccuracyLPC = modelLPC.evaluate(Xtestlpc, Ytestlpc)[1]
      return modelLPC, maxlength
 
@@ -279,6 +279,8 @@ def predictWithSpecModel(model,maxlength,filepath):
 
      if len(dsData) < maxlength:
           dsData = np.concatenate((dsData,np.zeros(maxlength-len(dsData))))
+     elif len(dsData) > maxlength:
+          dsData = dsData[:maxlength]
 
      # STFT
      nFFT = 256 # Must be even
@@ -291,7 +293,7 @@ def predictWithSpecModel(model,maxlength,filepath):
      SFTdata = 20*np.log10(np.abs(SFTdata[:,:int(np.ceil(maxlength/hop))]))
 
      prediction = model.predict_on_batch(SFTdata.reshape(1, SFTdata.shape[0], SFTdata.shape[1]))
-     labelPrediction = np.argmax(prediction, axis=1)
+     labelPrediction = np.argmax(prediction, axis=1)[0]
      certaintyVal = np.max(prediction, axis=1)[0]
      return labelPrediction, certaintyVal
 
@@ -341,7 +343,7 @@ def predictWithLPCModel(model,maxlength,filepath):
      Xlpc[p//2:,:] = np.concatenate((np.angle(sortedroots),np.zeros((p//2,maxm-numm))),axis=1)
 
      prediction = model.predict_on_batch(Xlpc.reshape(1, Xlpc.shape[0], Xlpc.shape[1], 1))
-     labelPrediction = np.argmax(prediction, axis=1)
+     labelPrediction = np.argmax(prediction, axis=1)[0]
      certaintyVal = np.max(prediction, axis=1)[0]
      return labelPrediction, certaintyVal
 
