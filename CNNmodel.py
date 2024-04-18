@@ -346,7 +346,7 @@ def predictWithLPCModel(model,maxlength,filepath):
      return labelPrediction, certaintyVal
 
 # modelS, maxlengthS = trainModelSpectrogram(baseFolder)
-modelL, maxlengthL = trainModelLPC(baseFolder)
+# modelL, maxlengthL = trainModelLPC(baseFolder)
 
-label, val = predictWithLPCModel(modelL,maxlengthL,baseFolder + '\\publications\\shortened\\publications_13.wav')
-print(f'Label={label}, Val={val}')
+# label, val = predictWithLPCModel(modelL,maxlengthL,baseFolder + '\\publications\\shortened\\publications_13.wav')
+# print(f'Label={label}, Val={val}')
